@@ -30,3 +30,10 @@ Eine Dream-inspirierte Kreativ- und Gaming-Plattform mit einer eigenen Orchestri
 Die vollständige Bestandsaufnahme der verbundenen GitHub-Repositories und Render-Dienste steht in [docs/PORTFOLIO_CATALOG.md](docs/PORTFOLIO_CATALOG.md).
 
 **Hinweis zum Status:** Der Katalog beschreibt den aus Repository-Dateien, README-Inhalten und Render-Konfigurationen erkennbaren Zweck. Eine vorhandene Render-URL bedeutet nicht automatisch, dass alle Funktionen produktionsreif sind. Im Katalog werden Prototypen, Legacy-Projekte, Platzhalter und doppelte Deployments ausdrücklich gekennzeichnet.
+
+
+## Implemented agent network foundation
+
+The repository now includes a Flask API, agent dashboard, configurable HTTPS provider adapters, task history, admin-protected update proposals, a website widget, Render Blueprint, scheduled CI quality/dependency audits and Dependabot update proposals.
+
+See [docs/AGENT_NETWORK.md](docs/AGENT_NETWORK.md) for deployment and integration instructions. The adapters are intentionally shown as disconnected until real endpoint URLs and credentials are configured. Existing websites are not silently modified; the widget must be embedded after the central service is deployed and must respect the project exclusions.
