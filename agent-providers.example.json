@@ -1,0 +1,13 @@
+# Copy the JSON object to Render as THE_LORD_AI_PROVIDERS.
+# Each endpoint must be an HTTPS API owned/authorized by you.
+# Add api_key_env only when the provider accepts Bearer authentication.
+{
+  "quantum-ultra": {"url": "https://YOUR-QUANTUM-ULTRA-API/api/chat", "api_key_env": "QUANTUM_ULTRA_API_KEY"},
+  "ionos": {"url": "https://YOUR-IONOS-API/api/chat", "api_key_env": "IONOS_API_KEY"},
+  "galactic": {"url": "https://YOUR-GALACTIC-AI-API/api/chat", "api_key_env": "GALACTIC_AI_API_KEY"},
+  "quantum-mirror": {"url": "https://YOUR-QUANTUM-MIRROR-API/api/ai", "api_key_env": "QUANTUM_MIRROR_API_KEY"},
+  "quantenformel": {"url": "https://YOUR-QUANTENFORMEL-API/api/chat", "api_key_env": "QUANTENFORMEL_API_KEY"},
+  "note-ki": {"url": "https://YOUR-NOTE-KI-API/api/chat", "api_key_env": "NOTE_KI_API_KEY"},
+  "quantumlight": {"url": "https://YOUR-QUANTUMLIGHT-API/api/chat", "api_key_env": "QUANTUMLIGHT_API_KEY"},
+  "cat-chat": {"url": "https://YOUR-CAT-CHAT-API/api/chat", "api_key_env": "CAT_CHAT_API_KEY"}
+}
