@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: the-lord-agent-network
+    runtime: python
+    plan: starter
+    region: frankfurt
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --workers 2 --threads 4 --timeout 60 app:app
+    healthCheckPath: /health
+    disk:
+      name: the-lord-data
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: THE_LORD_DB_PATH
+        value: /var/data/the_lord.sqlite3
+      - key: THE_LORD_ADMIN_API_KEY
+        sync: false
+      - key: THE_LORD_AI_PROVIDERS
+        sync: false
