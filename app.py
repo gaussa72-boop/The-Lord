@@ -69,7 +69,7 @@ def public_agents():
         result.append({**item, "connected": bool(cfg.get("url")), "status": "configured" if cfg.get("url") else "awaiting_endpoint"})
     return result
 
-def call_provider(agent_id, prompt, context=None):
+def call_provider(agent_id, prompt, context=None, language="de"):\n    language_names = {"de":"German","en":"English","fr":"French","es":"Spanish","it":"Italian","pt":"Portuguese","nl":"Dutch","ru":"Russian","tr":"Turkish","pl":"Polish","ar":"Arabic","zh":"Chinese","ja":"Japanese"}\n    language_name = language_names.get(language, "German")\n    prompt = f"{prompt}\\n\\n[Response language instruction: Reply entirely in {language_name}. Keep all explanations, labels and user-facing text in {language_name}.]"
     cfg = provider_config().get(agent_id)
     if not isinstance(cfg, dict) or not cfg.get("url"):
         return {"agent_id": agent_id, "status": "not_configured", "message": "Für diesen Agenten ist noch kein API-Endpunkt hinterlegt."}
@@ -120,7 +120,7 @@ def run_agents():
     with db() as conn:
         conn.execute("INSERT INTO agent_tasks(id,goal,status,created_at,updated_at) VALUES(?,?,?,?,?)",
                      (task_id, goal, "running", now, now))
-    outputs = [call_provider(agent_id, goal, body.get("context")) for agent_id in selected]
+    language = str(body.get("language", "de")).lower()\n    if language not in {"de","en","fr","es","it","pt","nl","ru","tr","pl","ar","zh","ja"}:\n        language = "de"\n    outputs = [call_provider(agent_id, goal, body.get("context"), language) for agent_id in selected]
     success = any(x["status"] == "ok" for x in outputs)
     status = "completed" if success else "waiting_for_provider_configuration"
     with db() as conn:
