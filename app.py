@@ -71,7 +71,8 @@ def public_agents():
 
 def call_provider(agent_id, prompt, context=None, language="de"):
     language_names = {"de":"German","en":"English","fr":"French","es":"Spanish","it":"Italian","pt":"Portuguese","nl":"Dutch","ru":"Russian","tr":"Turkish","pl":"Polish","ar":"Arabic","zh":"Chinese","ja":"Japanese"}
-    language_name = language_names.get(language, "German")\n    prompt = f"{prompt}\n\n[Response language instruction: Reply entirely in {language_name}. Keep all explanations, labels and user-facing text in {language_name}.]"
+    language_name = language_names.get(language, "German")
+    prompt = f"{prompt}\n\n[Response language instruction: Reply entirely in {language_name}. Keep all explanations, labels and user-facing text in {language_name}.]"
     cfg = provider_config().get(agent_id)
     if not isinstance(cfg, dict) or not cfg.get("url"):
         return {"agent_id": agent_id, "status": "not_configured", "message": "Für diesen Agenten ist noch kein API-Endpunkt hinterlegt."}
