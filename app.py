@@ -70,7 +70,8 @@ def public_agents():
     return result
 
 def call_provider(agent_id, prompt, context=None, language="de"):
-    language_names = {"de":"German","en":"English","fr":"French","es":"Spanish","it":"Italian","pt":"Portuguese","nl":"Dutch","ru":"Russian","tr":"Turkish","pl":"Polish","ar":"Arabic","zh":"Chinese","ja":"Japanese"}\n    language_name = language_names.get(language, "German")\n    prompt = f"{prompt}\\n\\n[Response language instruction: Reply entirely in {language_name}. Keep all explanations, labels and user-facing text in {language_name}.]"
+    language_names = {"de":"German","en":"English","fr":"French","es":"Spanish","it":"Italian","pt":"Portuguese","nl":"Dutch","ru":"Russian","tr":"Turkish","pl":"Polish","ar":"Arabic","zh":"Chinese","ja":"Japanese"}
+    language_name = language_names.get(language, "German")\n    prompt = f"{prompt}\n\n[Response language instruction: Reply entirely in {language_name}. Keep all explanations, labels and user-facing text in {language_name}.]"
     cfg = provider_config().get(agent_id)
     if not isinstance(cfg, dict) or not cfg.get("url"):
         return {"agent_id": agent_id, "status": "not_configured", "message": "Für diesen Agenten ist noch kein API-Endpunkt hinterlegt."}
@@ -122,7 +123,8 @@ def run_agents():
         conn.execute("INSERT INTO agent_tasks(id,goal,status,created_at,updated_at) VALUES(?,?,?,?,?)",
                      (task_id, goal, "running", now, now))
     language = str(body.get("language", "de")).lower()
-    if language not in {"de","en","fr","es","it","pt","nl","ru","tr","pl","ar","zh","ja"}:\n        language = "de"
+    if language not in {"de","en","fr","es","it","pt","nl","ru","tr","pl","ar","zh","ja"}:
+        language = "de"
     outputs = [call_provider(agent_id, goal, body.get("context"), language) for agent_id in selected]
     success = any(x["status"] == "ok" for x in outputs)
     status = "completed" if success else "waiting_for_provider_configuration"
