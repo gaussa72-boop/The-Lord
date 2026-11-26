@@ -208,9 +208,14 @@ def avatar_chat():
     result = call_provider("quantum-ultra", system_prompt + "\n\nNutzernachricht: " + message, language=language)
     if result.get("status") == "ok":
         payload = result.get("response", {})
-        answer = payload.get("answer") or payload.get("response") or payload.get("text")
-        if isinstance(answer, dict):
-            answer = answer.get("content") or answer.get("text")
+        if isinstance(payload, str):
+            answer = payload
+        elif isinstance(payload, dict):
+            answer = payload.get("answer") or payload.get("response") or payload.get("text")
+            if isinstance(answer, dict):
+                answer = answer.get("content") or answer.get("text")
+        else:
+            answer = None
         if not answer and isinstance(payload.get("choices"), list) and payload["choices"]:
             answer = payload["choices"][0].get("message", {}).get("content")
         if answer:
