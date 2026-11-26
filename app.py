@@ -13,7 +13,7 @@ from flask import Flask, jsonify, request, send_from_directory
 ROOT = Path(__file__).resolve().parent
 DB_PATH = os.getenv("THE_LORD_DB_PATH", str(ROOT / "the_lord.sqlite3"))
 app = Flask(__name__, static_folder="static")
-app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
 
 AGENT_CATALOG = [
     {"id": "quantum-ultra", "name": "Quantum KI Ultra Pro", "role": "generalist", "skills": ["reasoning", "chat", "coding", "planning"]},
@@ -135,6 +135,34 @@ def run_agents():
     return jsonify({"task_id": task_id, "status": status, "results": outputs,
                     "next_step": "Configure provider endpoints for agents marked awaiting_endpoint."}), (200 if success else 503)
 
+
+@app.post("/api/v1/avatar/transcribe")
+def avatar_transcribe():
+    audio = request.files.get("audio")
+    language = str(request.form.get("language", "de")).lower()
+    allowed = {"de","en","fr","es","it","pt","nl","ru","tr","pl","ar","zh","ja"}
+    if language not in allowed:
+        language = "de"
+    if audio is None:
+        return jsonify({"error": "Keine Audiodatei empfangen."}), 400
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        return jsonify({"error": "Für die Mikrofonaufnahme in diesem Browser muss OPENAI_API_KEY in Render hinterlegt sein. Alternativ nutze die eingebaute Spracherkennung oder schreibe deine Nachricht."}), 503
+    try:
+        content_type = audio.mimetype or "audio/webm"
+        extension = "mp4" if "mp4" in content_type else "webm"
+        response = requests.post("https://api.openai.com/v1/audio/transcriptions",
+            headers={"Authorization": "Bearer " + api_key},
+            files={"file": ("aurealis-voice." + extension, audio.read(), content_type)},
+            data={"model": os.getenv("OPENAI_TRANSCRIBE_MODEL", "whisper-1"), "language": language},
+            timeout=(8, 45))
+        response.raise_for_status()
+        text = response.json().get("text", "").strip()
+        if not text:
+            return jsonify({"error": "In der Aufnahme wurde keine Sprache erkannt."}), 422
+        return jsonify({"ok": True, "text": text, "language": language})
+    except requests.RequestException as exc:
+        return jsonify({"error": "Die Sprachaufnahme konnte nicht verarbeitet werden: " + str(exc)[:300]}), 502
 
 @app.post("/api/v1/avatar/chat")
 def avatar_chat():
