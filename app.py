@@ -69,7 +69,8 @@ def public_agents():
         result.append({**item, "connected": bool(cfg.get("url")), "status": "configured" if cfg.get("url") else "awaiting_endpoint"})
     return result
 
-def call_provider(agent_id, prompt, context=None, language="de"):\n    language_names = {"de":"German","en":"English","fr":"French","es":"Spanish","it":"Italian","pt":"Portuguese","nl":"Dutch","ru":"Russian","tr":"Turkish","pl":"Polish","ar":"Arabic","zh":"Chinese","ja":"Japanese"}\n    language_name = language_names.get(language, "German")\n    prompt = f"{prompt}\\n\\n[Response language instruction: Reply entirely in {language_name}. Keep all explanations, labels and user-facing text in {language_name}.]"
+def call_provider(agent_id, prompt, context=None, language="de"):
+    language_names = {"de":"German","en":"English","fr":"French","es":"Spanish","it":"Italian","pt":"Portuguese","nl":"Dutch","ru":"Russian","tr":"Turkish","pl":"Polish","ar":"Arabic","zh":"Chinese","ja":"Japanese"}\n    language_name = language_names.get(language, "German")\n    prompt = f"{prompt}\\n\\n[Response language instruction: Reply entirely in {language_name}. Keep all explanations, labels and user-facing text in {language_name}.]"
     cfg = provider_config().get(agent_id)
     if not isinstance(cfg, dict) or not cfg.get("url"):
         return {"agent_id": agent_id, "status": "not_configured", "message": "Für diesen Agenten ist noch kein API-Endpunkt hinterlegt."}
@@ -120,7 +121,9 @@ def run_agents():
     with db() as conn:
         conn.execute("INSERT INTO agent_tasks(id,goal,status,created_at,updated_at) VALUES(?,?,?,?,?)",
                      (task_id, goal, "running", now, now))
-    language = str(body.get("language", "de")).lower()\n    if language not in {"de","en","fr","es","it","pt","nl","ru","tr","pl","ar","zh","ja"}:\n        language = "de"\n    outputs = [call_provider(agent_id, goal, body.get("context"), language) for agent_id in selected]
+    language = str(body.get("language", "de")).lower()
+    if language not in {"de","en","fr","es","it","pt","nl","ru","tr","pl","ar","zh","ja"}:\n        language = "de"
+    outputs = [call_provider(agent_id, goal, body.get("context"), language) for agent_id in selected]
     success = any(x["status"] == "ok" for x in outputs)
     status = "completed" if success else "waiting_for_provider_configuration"
     with db() as conn:
@@ -128,6 +131,50 @@ def run_agents():
                      (status, datetime.now(timezone.utc).isoformat(), json.dumps(outputs), task_id))
     return jsonify({"task_id": task_id, "status": status, "results": outputs,
                     "next_step": "Configure provider endpoints for agents marked awaiting_endpoint."}), (200 if success else 503)
+
+
+@app.post("/api/v1/avatar/chat")
+def avatar_chat():
+    body = request.get_json(silent=True) or {}
+    message = str(body.get("message", "")).strip()
+    language = str(body.get("language", "de")).lower()
+    allowed = {"de","en","fr","es","it","pt","nl","ru","tr","pl","ar","zh","ja"}
+    if language not in allowed:
+        language = "de"
+    if not message or len(message) > 8000:
+        return jsonify({"error": "Bitte sende eine Nachricht mit maximal 8000 Zeichen."}), 400
+    names = {"de":"German","en":"English","fr":"French","es":"Spanish","it":"Italian","pt":"Portuguese","nl":"Dutch","ru":"Russian","tr":"Turkish","pl":"Polish","ar":"Arabic","zh":"Chinese","ja":"Japanese"}
+    system_prompt = ("Du bist AUREALIS, der freundliche, ruhige und aufmerksame 3D-KI-Begleiter von THE LORD. "
+        "Führe ein natürliches Gespräch, höre auf das Anliegen, stelle bei Bedarf eine kurze Rückfrage "
+        "und antworte hilfreich, ehrlich und verständlich. Behaupte niemals, eine Handlung ausgeführt zu haben, "
+        "wenn sie nicht tatsächlich ausgeführt wurde. Antworte vollständig auf " + names[language] + ".")
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        try:
+            response = requests.post(os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/chat/completions"),
+                headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
+                json={"model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                      "messages": [{"role":"system","content":system_prompt},{"role":"user","content":message}],
+                      "temperature":0.7,"max_tokens":900}, timeout=(8,45))
+            response.raise_for_status()
+            answer = response.json().get("choices",[{}])[0].get("message",{}).get("content","").strip()
+            if answer:
+                return jsonify({"ok":True,"answer":answer,"provider":"openai","language":language})
+            return jsonify({"error":"Der KI-Anbieter hat eine leere Antwort zurückgegeben."}), 502
+        except requests.RequestException as exc:
+            return jsonify({"error":"Der KI-Anbieter ist momentan nicht erreichbar: "+str(exc)[:300]}), 502
+    result = call_provider("quantum-ultra", system_prompt + "\n\nNutzernachricht: " + message, language=language)
+    if result.get("status") == "ok":
+        payload = result.get("response", {})
+        answer = payload.get("answer") or payload.get("response") or payload.get("text")
+        if isinstance(answer, dict):
+            answer = answer.get("content") or answer.get("text")
+        if not answer and isinstance(payload.get("choices"), list) and payload["choices"]:
+            answer = payload["choices"][0].get("message", {}).get("content")
+        if answer:
+            return jsonify({"ok":True,"answer":str(answer),"provider":"quantum-ultra","language":language})
+        return jsonify({"error":"Der Quantum-Ultra-Provider hat keine lesbare Antwort geliefert."}), 502
+    return jsonify({"error":"AUREALIS ist visuell bereit, aber der KI-Endpunkt ist noch nicht verbunden. Hinterlege OPENAI_API_KEY oder konfiguriere den Quantum-Ultra-Provider in Render."}), 503
 
 @app.get("/api/v1/tasks/<task_id>")
 def task_status(task_id):
