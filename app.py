@@ -145,6 +145,17 @@ def avatar_transcribe():
         language = "de"
     if audio is None:
         return jsonify({"error": "Keine Audiodatei empfangen."}), 400
+    history = body.get("history") if isinstance(body.get("history"), list) else []
+    chat_messages = [{"role": "system", "content": system_prompt}]
+    for item in history[-16:]:
+        if not isinstance(item, dict):
+            continue
+        role = item.get("role")
+        content = str(item.get("content", "")).strip()
+        if role in {"user", "assistant"} and content:
+            chat_messages.append({"role": role, "content": content[:4000]})
+    if chat_messages[-1].get("content") != message:
+        chat_messages.append({"role": "user", "content": message})
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         return jsonify({"error": "Für die Mikrofonaufnahme in diesem Browser muss OPENAI_API_KEY in Render hinterlegt sein. Alternativ nutze die eingebaute Spracherkennung oder schreibe deine Nachricht."}), 503
@@ -185,7 +196,7 @@ def avatar_chat():
             response = requests.post(os.getenv("OPENAI_API_URL", "https://api.openai.com/v1/chat/completions"),
                 headers={"Authorization": "Bearer " + api_key, "Content-Type": "application/json"},
                 json={"model": os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
-                      "messages": [{"role":"system","content":system_prompt},{"role":"user","content":message}],
+                      "messages": chat_messages,
                       "temperature":0.7,"max_tokens":900}, timeout=(8,45))
             response.raise_for_status()
             answer = response.json().get("choices",[{}])[0].get("message",{}).get("content","").strip()
