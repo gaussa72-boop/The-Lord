@@ -1,0 +1,9 @@
+{
+  "schema": "astralis.engine-link.v1",
+  "federation": "https://quantum-mirror-wonderland.onrender.com/api/game-engines/federation",
+  "dashboard": "https://quantum-mirror-wonderland.onrender.com/game-engines/",
+  "shared_generation_api": "https://quantum-mirror-wonderland.onrender.com/api/game-engines/generate",
+  "policy": "Each engine keeps its own repository, runtime, assets, identity and release gates. Cross-site browser calls are allowed only from explicitly allowlisted Render origins.",
+  "native_build_verified": false,
+  "repository": "gaussa72-boop/The-Lord"
+}
